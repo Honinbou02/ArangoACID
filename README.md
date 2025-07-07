@@ -24,8 +24,9 @@ foxx install /acid /caminho/para/arango-acid
 
 ---
 
-📁 Estrutura
-arango-acid/
+<h3>📁 Estrutura</h3>
+
+<pre><code>arango-acid/
 ├── lib/
 │   ├── executor.js      → Executa transações com rollback automático
 │   ├── fkCheck.js       → Simula integridade referencial
@@ -38,6 +39,7 @@ arango-acid/
 │
 ├── main.js              → Entrypoint do Foxx
 └── manifest.json        → Metadata do serviço
+</code></pre>
 
 ---
 
