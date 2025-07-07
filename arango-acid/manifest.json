@@ -1,0 +1,16 @@
+{
+  "name": "arango-acid",
+  "version": "1.0.0",
+  "description": "Generic transactional microservice for ArangoDB",
+  "author": "OpenAI",
+  "license": "Apache-2.0",
+  "main": "main.js",
+  "engines": {
+    "arangodb": "^3.10.0"
+  },
+  "files": {
+    "lib": "./lib",
+    "routes": "./routes",
+    "schemas": "./schemas"
+  }
+}
