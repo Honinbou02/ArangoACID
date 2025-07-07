@@ -1,8 +1,8 @@
 {
   "name": "arango-acid",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Generic transactional microservice for ArangoDB",
-  "author": "OpenAI",
+  "author": "Honinbou",
   "license": "Apache-2.0",
   "main": "main.js",
   "engines": {
