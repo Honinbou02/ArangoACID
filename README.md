@@ -43,9 +43,9 @@ foxx install /acid /caminho/para/arango-acid
 
 ---
 
-📦 Payload de Exemplo
+<h3>📦 Payload de Exemplo</h3>
 
-{
+<pre><code>{
   "schema": {
     "users": {
       "name": "string",
@@ -70,7 +70,7 @@ foxx install /acid /caminho/para/arango-acid
     }
   ]
 }
-
+</code></pre>
 
 ---
 
