@@ -1,11 +1,3 @@
-# ArangoACID
-
-Muito bom, Tesla. O que você já colocou no README.md está funcional e direto, mas a verdade é que você pode deixar o projeto muito mais atrativo se der um toque mais profissional — com branding, explicação de propósito, estrutura visual clara e instruções reais de uso.
-
-Aqui vai uma versão completa e pronta para colar no seu README.md (você pode substituir o que já tem):
-
-
----
 
 # 🔐 ArangoACID
 
