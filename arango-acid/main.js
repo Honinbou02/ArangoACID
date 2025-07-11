@@ -1,5 +1,13 @@
 'use strict';
 const createRouter = require('@arangodb/foxx/router');
+const db = require('@arangodb').db;
+const router = createRouter();
+
+const RELATIONS_COLLECTION = '__relations_config__';
+if (!db._collection(RELATIONS_COLLECTION)) {
+  db._createDocumentCollection(RELATIONS_COLLECTION);
+}
+
 const router = createRouter();
 
 const transactionRoutes = require('./routes/transaction');
@@ -7,5 +15,8 @@ router.use('/acid', transactionRoutes);
 
 const restfulRoutes = require('./routes/restful');
 router.use(restfulRoutes);
+
+const configRoutes = require('./routes/config');
+router.use('/config', configRoutes);
 
 module.context.use(router);

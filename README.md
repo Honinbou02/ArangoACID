@@ -40,6 +40,23 @@ curl -X PUT /arango-acid/api/users/123 -d '{"email":"new@mail.com"}'
 All write operations use the same transactional engine as the `/acid` endpoint
 and will rollback on failure.
 
+### Referential integrity
+
+Foreign key rules are stored in the `__relations_config__` collection. Each
+document uses the collection name as `_key` and lists its rules in the
+`relations` array:
+
+```js
+{
+  "_key": "users",
+  "relations": [
+    { "localField": "role", "refCollection": "roles", "refField": "_key" }
+  ]
+}
+```
+If no configuration exists for a collection the checks are skipped. You can
+manage these documents manually or via the `/config/relations` API. See
+`docs/setup-relations.md` for details.
 
 ### Referential integrity
 
