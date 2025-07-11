@@ -8,6 +8,8 @@ if (!db._collection(RELATIONS_COLLECTION)) {
   db._createDocumentCollection(RELATIONS_COLLECTION);
 }
 
+const router = createRouter();
+
 const transactionRoutes = require('./routes/transaction');
 router.use('/acid', transactionRoutes);
 
