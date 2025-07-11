@@ -40,6 +40,22 @@ curl -X PUT /arango-acid/api/users/123 -d '{"email":"new@mail.com"}'
 All write operations use the same transactional engine as the `/acid` endpoint
 and will rollback on failure.
 
+
+### Referential integrity
+
+To automatically validate foreign keys on the REST API, define rules in
+`lib/relations.js`. Each collection may list relations to other collections:
+
+```js
+module.exports = {
+  users: [
+    { localField: 'role', refCollection: 'roles', refField: '_key' }
+  ]
+};
+```
+
+If no rules are defined for a collection the checks are skipped.
+
 # 🔐 ArangoACID
 
 > ACID-like transactional layer for ArangoDB — powered by Foxx Microservices
@@ -161,4 +177,4 @@ Apache 2.0 — open-source e aberto para contribuições.
 
 ---
 
-> Criado por @Honinbou02 com ♥
+> Criado por @Honinbou02 com 💙

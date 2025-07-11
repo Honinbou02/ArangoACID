@@ -5,10 +5,15 @@ const Joi = require('joi');
 const validator = require('../lib/validator');
 const fkCheck = require('../lib/fkCheck');
 const executor = require('../lib/executor');
+const relations = require('../lib/relations');
 
 const router = createRouter();
 router.tag('restful');
 
+const collectionNames = db._collectionNames().filter(n => !n.startsWith('_'));
+
+collectionNames.forEach(name => {
+  const base = `/api/${name}`;
 // ⚠️ db._collectionNames() não funciona no Foxx runtime
 // ✅ Usamos _collections().map(...).filter(...) como alternativa segura
 const collectionNames = db._collections()
@@ -37,6 +42,7 @@ collectionNames.forEach(name => {
     .summary(`Get ${name} by key`)
     .description(`Return a single document from ${name}`);
 
+
   // POST /api/nome_da_collection → Insere documento com transação
   router.post(base, function (req, res) {
     const data = req.body;
@@ -44,6 +50,8 @@ collectionNames.forEach(name => {
     try { schema = require(`../schemas/${name}`); } catch (e) {}
     const ops = [{ collection: name, action: 'insert', data }];
     validator.validateSchema(schema, ops);
+    const fkRules = relations[name] || [];
+    fkCheck.check(fkRules, [data]);
     fkCheck.check();
     const result = executor.execute(ops);
     res.send(result[0]);
@@ -58,6 +66,8 @@ collectionNames.forEach(name => {
     try { schema = require(`../schemas/${name}`); } catch (e) {}
     const ops = [{ collection: name, action: 'update', data }];
     validator.validateSchema(schema, ops);
+    const fkRules = relations[name] || [];
+    fkCheck.check(fkRules, [data]);
     fkCheck.check();
     const result = executor.execute(ops);
     res.send(result[0]);
@@ -71,6 +81,8 @@ collectionNames.forEach(name => {
     const data = { _key: req.pathParams.key };
     const ops = [{ collection: name, action: 'remove', data }];
     validator.validateSchema({}, ops);
+    const fkRules = relations[name] || [];
+    fkCheck.check(fkRules, [data]);
     fkCheck.check();
     const result = executor.execute(ops);
     res.send(result[0]);
