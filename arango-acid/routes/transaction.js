@@ -15,6 +15,13 @@ const payloadSchema = Joi.object({
 }).required();
 
 router.post('/transaction', function (req, res) {
+  const payload = req.body;
+  validator.validateSchema(payload.schema, payload.operations);
+  if (payload.foreignKeys) {
+    fkCheck.check(payload.foreignKeys);
+  }
+  const result = executor.execute(payload.operations);
+  res.send(result);
   try {
     const payload = req.body;
 
