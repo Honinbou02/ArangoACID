@@ -22,6 +22,23 @@ router.post('/transaction', function (req, res) {
   }
   const result = executor.execute(payload.operations);
   res.send(result);
+  try {
+    const payload = req.body;
+
+    // Validação de schema
+    validator.validateSchema(payload.schema, payload.operations);
+
+    // Validação de chaves estrangeiras (FK)
+    if (payload.foreignKeys) {
+      fkCheck.check(payload.foreignKeys);
+    }
+
+    // Execução da transação
+    const result = executor.execute(payload.operations);
+    res.send(result);
+  } catch (err) {
+    res.throw('bad request', err.message);
+  }
 })
 .body(payloadSchema, 'Operations to execute atomically')
 .response(200, Joi.object().required(), 'Result of transaction')

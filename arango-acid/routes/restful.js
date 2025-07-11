@@ -14,6 +14,16 @@ const collectionNames = db._collectionNames().filter(n => !n.startsWith('_'));
 
 collectionNames.forEach(name => {
   const base = `/api/${name}`;
+// ⚠️ db._collectionNames() não funciona no Foxx runtime
+// ✅ Usamos _collections().map(...).filter(...) como alternativa segura
+const collectionNames = db._collections()
+  .map(c => c.name())
+  .filter(n => !n.startsWith('_'));
+
+collectionNames.forEach(name => {
+  const base = `/api/${name}`;
+
+  // GET /api/nome_da_collection → Lista todos os documentos
   router.get(base, function (req, res) {
     const col = db._collection(name);
     if (!col) res.throw(404, 'Collection not found');
@@ -21,6 +31,7 @@ collectionNames.forEach(name => {
   }).summary(`List ${name}`)
     .description(`List documents from ${name}`);
 
+  // GET /api/nome_da_collection/:key → Busca documento por chave
   router.get(`${base}/:key`, function (req, res) {
     const col = db._collection(name);
     if (!col) res.throw(404, 'Collection not found');
@@ -31,6 +42,8 @@ collectionNames.forEach(name => {
     .summary(`Get ${name} by key`)
     .description(`Return a single document from ${name}`);
 
+
+  // POST /api/nome_da_collection → Insere documento com transação
   router.post(base, function (req, res) {
     const data = req.body;
     let schema = {};
@@ -39,12 +52,14 @@ collectionNames.forEach(name => {
     validator.validateSchema(schema, ops);
     const fkRules = relations[name] || [];
     fkCheck.check(fkRules, [data]);
+    fkCheck.check();
     const result = executor.execute(ops);
     res.send(result[0]);
   }).body(Joi.object().required(), `Document to insert in ${name}`)
     .summary(`Insert into ${name}`)
     .description(`Insert a document into ${name} using transactional executor`);
 
+  // PUT /api/nome_da_collection/:key → Atualiza documento com transação
   router.put(`${base}/:key`, function (req, res) {
     const data = Object.assign({}, req.body, { _key: req.pathParams.key });
     let schema = {};
@@ -53,6 +68,7 @@ collectionNames.forEach(name => {
     validator.validateSchema(schema, ops);
     const fkRules = relations[name] || [];
     fkCheck.check(fkRules, [data]);
+    fkCheck.check();
     const result = executor.execute(ops);
     res.send(result[0]);
   }).pathParam('key', Joi.string().required(), 'Document key')
@@ -60,12 +76,14 @@ collectionNames.forEach(name => {
     .summary(`Update ${name}`)
     .description(`Update a document in ${name} using transactional executor`);
 
+  // DELETE /api/nome_da_collection/:key → Remove documento com transação
   router.delete(`${base}/:key`, function (req, res) {
     const data = { _key: req.pathParams.key };
     const ops = [{ collection: name, action: 'remove', data }];
     validator.validateSchema({}, ops);
     const fkRules = relations[name] || [];
     fkCheck.check(fkRules, [data]);
+    fkCheck.check();
     const result = executor.execute(ops);
     res.send(result[0]);
   }).pathParam('key', Joi.string().required(), 'Document key')
