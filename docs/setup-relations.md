@@ -1,6 +1,6 @@
 # Configuring Relations
 
-ArangoACID reads foreign key rules from the `__relations_config__` collection. Each
+ArangoACID reads foreign key rules from the `relations_config` collection. Each
 configuration document uses the target collection name as `_key` and stores its
 rules in the `relations` array.
 
