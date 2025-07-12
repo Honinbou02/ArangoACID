@@ -1,131 +1,128 @@
-# ArangoACID
+# 🇧🇷 ArangoACID
 
-ArangoACID is a Foxx microservice providing transactional write capabilities for ArangoDB.
+> Camada transacional ACID-like para ArangoDB — powered by Foxx Microservices
 
-## Installation
+O **ArangoACID** é um microserviço genérico, reutilizável e open-source que fornece uma camada de transações atômicas, validação de integridade relacional ("chaves estrangeiras") e suporte a deleção em cascata — tudo sem precisar sair do seu banco ArangoDB.
 
-Use the Foxx CLI to install the service:
+Ideal para quem precisa de consistência, rollback seguro e estrutura de dados relacional mesmo em ambiente multimodelo.
 
-```bash
-foxx install ./arango-acid /arango-acid
-```
+---
 
-## Example Payload
+## 🆕 Novidades da versão 1.1
 
-```json
-{
-  "schema": {},
-  "operations": [
-    {"collection": "users", "action": "insert", "data": {"_key": "bob", "name": "Bob"}}
-  ],
-  "foreignKeys": [
-    {"refCollection": "roles", "refField": "_key", "value": "admin"}
-  ]
-}
-```
+✅ Endpoints RESTful automáticos para qualquer coleção:
 
-## RESTful API
+* `POST /arango-acid/api/NOMEDACOLECTION`
+* `PUT /arango-acid/api/NOMEDACOLECTION/_key`
+* `DELETE /arango-acid/api/NOMEDACOLECTION/_key`
 
-After installation the service exposes dynamic REST endpoints based on your
-existing collections. Example usage:
+✅ Validação de chaves estrangeiras (FK) para inserções e updates
 
-```bash
-# insert a new document into collection "users"
-curl -X POST /arango-acid/api/users -d '{"name":"Tesla"}'
+✅ Deleção em cascata (cascade delete) respeitando `onDelete: "cascade"`
 
-# update a document
-curl -X PUT /arango-acid/api/users/123 -d '{"email":"new@mail.com"}'
-```
+✅ Validação de estrutura via Joi embutida no fluxo
 
-All write operations use the same transactional engine as the `/acid` endpoint
-and will rollback on failure.
+✅ Transações seguras com rollback automático se qualquer passo falhar
 
-### Referential integrity
-
-Foreign key rules are stored in the `__relations_config__` collection. Each
-document uses the collection name as `_key` and lists its rules in the
-`relations` array:
-
-```js
-{
-  "_key": "users",
-  "relations": [
-    { "localField": "role", "refCollection": "roles", "refField": "_key" }
-  ]
-}
-```
-Rules may optionally set `onDelete: "cascade"` to automatically remove
-child documents referencing the deleted record.
-If no configuration exists for a collection the checks are skipped. You can
-manage these documents manually or via the `/config/relations` API. See
-`docs/setup-relations.md` for details.
-
-If no configuration exists for a collection the checks are skipped. You can
-manage these documents manually or via the `/config/relations` API. See
-`docs/setup-relations.md` for details.
-
-### Referential integrity
-
-To automatically validate foreign keys on the REST API, define rules in
-`lib/relations.js`. Each collection may list relations to other collections:
-
-```js
-module.exports = {
-  users: [
-    { localField: 'role', refCollection: 'roles', refField: '_key' }
-  ]
-};
-```
-
-If no rules are defined for a collection the checks are skipped.
-
-# 🔐 ArangoACID
-
-> ACID-like transactional layer for ArangoDB — powered by Foxx Microservices
-
-ArangoACID é um microserviço genérico e reutilizável que simula transações seguras, validadas por schema e com checagem de integridade relacional no ArangoDB. Ideal para aplicações que precisam de mais **controle de consistência**, sem abandonar o poder do modelo multimodelo.
+✅ Sem dependência externa, 100% via Foxx microservice
 
 ---
 
 ## ⚙️ Instalação
 
-Via painel web do ArangoDB:
+### Pelo Painel Web do ArangoDB:
 
-1. Vá em **Services** (Foxx)
+1. Acesse **Services (Foxx)**
 2. Clique em **Upload**
-3. Faça upload da pasta compactada `arango-acid.zip`
-4. O endpoint `/acid/transaction` estará disponível
+3. Faça upload da pasta ou `.zip` do serviço `arango-acid`
+4. O endpoint será acessível em `/arango-acid`
 
-Ou via CLI:
+### Pela Foxx CLI:
 
-bash
-foxx install /acid /caminho/para/arango-acid
-
+```bash
+foxx install ./arango-acid /arango-acid
+```
 
 ---
 
-<h3>📁 Estrutura</h3>
+## 📁 Estrutura do Projeto
 
-<pre><code>arango-acid/
+```
+arango-acid/
 ├── lib/
-│   ├── executor.js      → Executa transações com rollback automático
-│   ├── fkCheck.js       → Simula integridade referencial
-│   └── validator.js     → Valida estrutura e schema via Joi
+│   ├── executor.js        # Executa operações com rollback
+│   ├── fkCheck.js         # Checagem de integridade relacional
+│   └── validator.js       # Valida schema com Joi
 │
 ├── routes/
-│   └── transaction.js   → Roteia e orquestra chamadas
+│   └── api.js             # Endpoints dinâmicos REST por coleção
 │
-├── schemas/             → (opcional) Schemas reutilizáveis
+├── schemas/               # Schemas Joi reutilizáveis (opcional)
 │
-├── main.js              → Entrypoint do Foxx
-└── manifest.json        → Metadata do serviço
-</code></pre>
+├── main.js                # Entrypoint do microserviço
+└── manifest.json          # Metadata do Foxx
+```
 
 ---
 
-<h3>📦 Payload de Exemplo</h3>
+## 🔗 Endpoints RESTful
 
-<pre><code>{
+Após instalar, você pode usar endpoints automáticos com transação embutida:
+
+```bash
+# Inserir documento na coleção "users"
+curl -u root:SENHA \
+  -X POST https://host/_db/_system/arango-acid/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"_key": "123", "name": "Tesla"}'
+
+# Atualizar documento
+curl -u root:SENHA \
+  -X PUT https://host/_db/_system/arango-acid/api/users/123 \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Nikola Tesla"}'
+
+# Deletar com cascade (se configurado)
+curl -u root:SENHA \
+  -X DELETE https://host/_db/_system/arango-acid/api/users/123
+```
+
+Todas as operações usam transações ACID-like e rollback automático.
+
+---
+
+## 🧠 Regras de Integridade Relacional (FKs)
+
+As "chaves estrangeiras" são definidas na coleção especial `relations_config`:
+
+```json
+{
+  "_key": "posts",
+  "relations": [
+    {
+      "localField": "author",
+      "refCollection": "users",
+      "refField": "_key",
+      "onDelete": "cascade"
+    }
+  ]
+}
+```
+
+Esse exemplo define:
+
+* A coleção `posts` tem um campo `author`
+* Ele faz referência a `_key` da coleção `users`
+* Se um `user` for deletado, os `posts` dele também são removidos
+
+Você pode adicionar as configurações manualmente no ArangoDB ou via API `/config/relations` (a ser implementada).
+
+---
+
+## 📃 Payload Completo (via `/acid` ou interno)
+
+```json
+{
   "schema": {
     "users": {
       "name": "string",
@@ -137,67 +134,70 @@ foxx install /acid /caminho/para/arango-acid
       "collection": "users",
       "action": "insert",
       "data": {
+        "_key": "123",
         "name": "Tesla",
         "email": "tesla@arango.dev"
       }
-    }
-  ],
-  "foreignKeys": [
+    },
     {
-      "refCollection": "roles",
-      "refField": "_key",
-      "value": "admin"
+      "collection": "posts",
+      "action": "insert",
+      "data": {
+        "_key": "post1",
+        "author": "123",
+        "content": "Post 1"
+      }
     }
   ]
 }
-</code></pre>
+```
 
 ---
 
-🔐 O que é validado?
+## 🔒 O que é validado?
 
-✅ Estrutura das operações (collection, action, data)
-
-✅ Schema via Joi para validar tipo e formato
-
-✅ Checagem de "chaves estrangeiras" (simulada via firstExample)
-
-✅ Execução 100% atômica com rollback se algo falhar
-
-
+| Validação                     | Como funciona                                                |
+| ----------------------------- | ------------------------------------------------------------ |
+| Validação de Schema Joi       | Define estrutura dos dados esperados (tipos, required, etc)  |
+| Validação de FK (foreign key) | Busca documentos referenciados e valida sua existência       |
+| Cascade Delete                | Apaga filhos automaticamente com base no `onDelete: cascade` |
+| Transação ACID-like           | Todas as operações são rollbackadas se algo falhar           |
 
 ---
 
-🧠 Por que isso importa?
+## 🧠 Por que usar o ArangoACID?
 
-ArangoDB é poderoso, mas falta uma camada de:
+* Arango não tem integridade relacional nativa
+* Também não valida schema sem escrever código manual
+* Falta controle de rollback para operações REST
 
-Schema Validation robusta
-
-Garantia de rollback total
-
-Simulação de integridade relacional
-
-
-Este microserviço oferece isso sem mudar seu banco, nem abandonar performance.
-
+O ArangoACID resolve tudo isso de forma **centralizada, reusável e robusta**.
 
 ---
 
-🧪 Futuro
+## 🧪 Futuro do Projeto
 
-🔄 Versões RESTful por coleção (auto-generators)
-
-🔐 Modo de autenticação OAuth2 (já incluso no Foxx)
-
-🔁 Indexação automática com AQL validators
+* 🔐 **Autenticação OAuth2/JWT integrada**
+  Suporte nativo a controle de acesso via tokens (por header ou cookie), com permissões por collection e por operação.
+* 🔁 **Indexação e validação por AQL customizado**
+  Inclusão de validações declarativas com AQL para regras de negócio complexas, permitindo checks dinâmicos antes de commits.
+* 🧱 **Logs transacionais e replay de eventos**
+  Gravação opcional de cada transação em uma collection de histórico (`_acid_logs`) para auditoria, debugging ou reprocessamento.
+* ⚙️ **Interface visual para configuração de relações**
+  Mini dashboard em React ou Vue embutido no painel do Foxx para editar a `relations_config` com visualização gráfica.
+* 🧪 **Testes unitários e integração via Mocha/Chai**
+  Testes formais para cada etapa: schema, executor, integridade relacional, rollback e endpoints REST.
+* 📦 **Compatibilidade total com CI/CD**
+  Exportação automática dos endpoints e configs para ambientes Docker/Kubernetes, integrando com pipelines.
+* 🌐 **Versão GraphQL experimental**
+  Exposição de uma camada opcional de GraphQL com validações e resolvers conectados à lógica transacional.
 
 ---
 
-📜 Licença
+## 📖 Licença
 
-Apache 2.0 — open-source e aberto para contribuições.
+Apache 2.0 — uso livre, contribuições são bem-vindas.
 
 ---
 
-> Criado por @Honinbou02 com 💙
+> Criado com ❤️ por @Honinbou02
