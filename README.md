@@ -1,4 +1,4 @@
-# 🇧🇷 ArangoACID
+# 🇧🇷 ArangoACID    [🇺🇸 English Version](README.md)
 
 > Camada transacional ACID-like para ArangoDB — powered by Foxx Microservices
 
