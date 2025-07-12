@@ -22,8 +22,12 @@ function check(rules, docs) {
     if (!foreignKeys) return true;
 
     foreignKeys.forEach(fk => {
+      // ignora regras de cascade
+      if (fk.onDelete === 'cascade') return;
+
       const col = db._collection(fk.refCollection);
       if (!col) throw new Error(`Collection ${fk.refCollection} not found`);
+
       const valueStr = String(fk.value);
       const found = col.byExample({ [fk.refField]: valueStr }).toArray();
       if (found.length === 0) {
@@ -35,7 +39,7 @@ function check(rules, docs) {
   }
 
   // Novo modo: check(rules, docs)
-  const fkRules = rules || [];
+  const fkRules = (rules || []).filter(rule => rule.onDelete !== 'cascade');
   const documents = docs || [];
 
   documents.forEach(doc => {
