@@ -1,14 +1,13 @@
 'use strict';
 const createRouter = require('@arangodb/foxx/router');
 const db = require('@arangodb').db;
-const router = createRouter();
+
+const router = createRouter(); // ✅ só uma vez!
 
 const RELATIONS_COLLECTION = '__relations_config__';
 if (!db._collection(RELATIONS_COLLECTION)) {
   db._createDocumentCollection(RELATIONS_COLLECTION);
 }
-
-const router = createRouter();
 
 const transactionRoutes = require('./routes/transaction');
 router.use('/acid', transactionRoutes);
