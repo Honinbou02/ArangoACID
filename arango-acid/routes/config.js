@@ -5,7 +5,7 @@ const Joi = require('joi');
 const router = createRouter();
 router.tag('relations config');
 
-const RELATIONS_COLLECTION = '__relations_config__';
+const RELATIONS_COLLECTION = 'relations_config';
 
 router.get('/relations', function (req, res) {
   const col = db._collection(RELATIONS_COLLECTION);
