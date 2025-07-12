@@ -4,7 +4,7 @@ const db = require('@arangodb').db;
 
 const router = createRouter(); // ✅ só uma vez!
 
-const RELATIONS_COLLECTION = '__relations_config__';
+const RELATIONS_COLLECTION = 'relations_config';
 if (!db._collection(RELATIONS_COLLECTION)) {
   db._createDocumentCollection(RELATIONS_COLLECTION);
 }
