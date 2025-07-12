@@ -15,19 +15,29 @@ const payloadSchema = Joi.object({
 }).required();
 
 router.post('/transaction', function (req, res) {
-  const payload = req.body;
-  validator.validateSchema(payload.schema, payload.operations);
-  if (payload.foreignKeys) {
-    fkCheck.check(payload.foreignKeys);
-  } else {
-    payload.operations.forEach(op => {
-      if (op.action !== 'remove') {
-        fkCheck.checkFromConfig(op.collection, [op.data]);
-      }
-    });
+  try {
+    const payload = req.body;
+
+    // Validação de schema
+    validator.validateSchema(payload.schema, payload.operations);
+
+    // Validação de FKs
+    if (payload.foreignKeys) {
+      fkCheck.check(payload.foreignKeys);
+    } else {
+      payload.operations.forEach(op => {
+        if (op.action !== 'remove') {
+          fkCheck.checkFromConfig(op.collection, [op.data]);
+        }
+      });
+    }
+
+    // Executa transação
+    const result = executor.execute(payload.operations);
+    res.send(result);
+  } catch (err) {
+    res.throw('bad request', err.message);
   }
-  const result = executor.execute(payload.operations);
-  res.send(result);
 })
 .body(payloadSchema, 'Operations to execute atomically')
 .response(200, Joi.object().required(), 'Result of transaction')
