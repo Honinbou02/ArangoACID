@@ -15,22 +15,6 @@ const payloadSchema = Joi.object({
 }).required();
 
 router.post('/transaction', function (req, res) {
-  const payload = req.body;
-  validator.validateSchema(payload.schema, payload.operations);
-  if (payload.foreignKeys) {
-    fkCheck.check(payload.foreignKeys);
-  } else {
-    payload.operations.forEach(op => {
-      if (op.action !== 'remove') {
-        fkCheck.checkFromConfig(op.collection, [op.data]);
-      }
-    });
-  }
-  const result = executor.execute(payload.operations);
-  res.send(result);
-  }
-  const result = executor.execute(payload.operations);
-  res.send(result);
   try {
     const payload = req.body;
 
@@ -40,6 +24,12 @@ router.post('/transaction', function (req, res) {
     // Validação de chaves estrangeiras (FK)
     if (payload.foreignKeys) {
       fkCheck.check(payload.foreignKeys);
+    } else {
+      payload.operations.forEach(op => {
+        if (op.action !== 'remove') {
+          fkCheck.checkFromConfig(op.collection, [op.data]);
+        }
+      });
     }
 
     // Execução da transação
