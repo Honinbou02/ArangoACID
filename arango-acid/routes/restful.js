@@ -1,4 +1,5 @@
 'use strict';
+
 const createRouter = require('@arangodb/foxx/router');
 const db = require('@arangodb').db;
 const Joi = require('joi');
@@ -10,31 +11,14 @@ const relations = require('../lib/relations');
 const router = createRouter();
 router.tag('restful');
 
-const collectionNames = db._collectionNames().filter(n => !n.startsWith('_'));
-
-collectionNames.forEach(name => {
-  const base = `/api/${name}`;
-  router.get(base, function (req, res) {
-    const col = db._collection(name);
-    if (!col) res.throw(404, 'Collection not found');
-    res.send(col.all().toArray());
-  }).summary(`List ${name}`)
-    .description(`List documents from ${name}`);
-
-  router.get(`${base}/:key`, function (req, res) {
-    const col = db._collection(name);
-    if (!col) res.throw(404, 'Collection not found');
-    const key = req.pathParams.key;
-    if (!col.exists(key)) res.throw(404, 'Document not found');
-    res.send(col.document(key));
-    
-// Alternativa segura ao _collectionNames()
+// Usar versão segura de lista de coleções
 const collectionNames = db._collections()
   .map(c => c.name())
   .filter(n => !n.startsWith('_'));
 
 collectionNames.forEach(name => {
   const base = `/api/${name}`;
+
   // GET all
   router.get(base, function (req, res) {
     try {
@@ -62,15 +46,6 @@ collectionNames.forEach(name => {
     .summary(`Get ${name} by key`)
     .description(`Return a single document from ${name}`);
 
-  router.post(base, function (req, res) {
-    const data = req.body;
-    let schema = {};
-    try { schema = require(`../schemas/${name}`); } catch (e) {}
-    const ops = [{ collection: name, action: 'insert', data }];
-    validator.validateSchema(schema, ops);
-    fkCheck.checkFromConfig(name, [data]);
-    const result = executor.execute(ops);
-    res.send(result[0]);
   // POST
   router.post(base, function (req, res) {
     try {
@@ -90,15 +65,6 @@ collectionNames.forEach(name => {
     .summary(`Insert into ${name}`)
     .description(`Insert a document into ${name} using transactional executor`);
 
-  router.put(`${base}/:key`, function (req, res) {
-    const data = Object.assign({}, req.body, { _key: req.pathParams.key });
-    let schema = {};
-    try { schema = require(`../schemas/${name}`); } catch (e) {}
-    const ops = [{ collection: name, action: 'update', data }];
-    validator.validateSchema(schema, ops);
-    fkCheck.checkFromConfig(name, [data]);
-    const result = executor.execute(ops);
-    res.send(result[0]);
   // PUT
   router.put(`${base}/:key`, function (req, res) {
     try {
@@ -119,13 +85,6 @@ collectionNames.forEach(name => {
     .summary(`Update ${name}`)
     .description(`Update a document in ${name} using transactional executor`);
 
-  router.delete(`${base}/:key`, function (req, res) {
-    const data = { _key: req.pathParams.key };
-    const ops = [{ collection: name, action: 'remove', data }];
-    validator.validateSchema({}, ops);
-    fkCheck.checkFromConfig(name, [data]);
-    const result = executor.execute(ops);
-    res.send(result[0]);
   // DELETE
   router.delete(`${base}/:key`, function (req, res) {
     try {
