@@ -6,12 +6,11 @@ const Joi = require('joi');
 const validator = require('../lib/validator');
 const fkCheck = require('../lib/fkCheck');
 const executor = require('../lib/executor');
-const relations = require('../lib/relations');
 
 const router = createRouter();
 router.tag('restful');
 
-// Usar versão segura de lista de coleções
+// Usa lista segura de coleções visíveis
 const collectionNames = db._collections()
   .map(c => c.name())
   .filter(n => !n.startsWith('_'));
@@ -35,10 +34,13 @@ collectionNames.forEach(name => {
   router.get(`${base}/:key`, function (req, res) {
     try {
       const col = db._collection(name);
-      if (!col) res.throw(404, 'Collection not found');
       const key = req.pathParams.key;
-      if (!col.exists(key)) res.throw(404, 'Document not found');
-      res.send(col.document(key));
+      try {
+        const doc = col.document(key);
+        res.send(doc);
+      } catch (e) {
+        res.throw(404, 'Document not found');
+      }
     } catch (err) {
       res.throw(500, err.message);
     }
@@ -46,7 +48,7 @@ collectionNames.forEach(name => {
     .summary(`Get ${name} by key`)
     .description(`Return a single document from ${name}`);
 
-  // POST
+  // POST (insert)
   router.post(base, function (req, res) {
     try {
       const data = req.body;
@@ -54,8 +56,7 @@ collectionNames.forEach(name => {
       try { schema = require(`../schemas/${name}`); } catch (e) {}
       const ops = [{ collection: name, action: 'insert', data }];
       validator.validateSchema(schema, ops);
-      const fkRules = relations[name] || [];
-      fkCheck.check(fkRules, [data]);
+      fkCheck.checkFromConfig(name, [data]);
       const result = executor.execute(ops);
       res.send(result[0]);
     } catch (err) {
@@ -65,7 +66,7 @@ collectionNames.forEach(name => {
     .summary(`Insert into ${name}`)
     .description(`Insert a document into ${name} using transactional executor`);
 
-  // PUT
+  // PUT (update)
   router.put(`${base}/:key`, function (req, res) {
     try {
       const data = Object.assign({}, req.body, { _key: req.pathParams.key });
@@ -73,8 +74,7 @@ collectionNames.forEach(name => {
       try { schema = require(`../schemas/${name}`); } catch (e) {}
       const ops = [{ collection: name, action: 'update', data }];
       validator.validateSchema(schema, ops);
-      const fkRules = relations[name] || [];
-      fkCheck.check(fkRules, [data]);
+      fkCheck.checkFromConfig(name, [data]);
       const result = executor.execute(ops);
       res.send(result[0]);
     } catch (err) {
@@ -91,8 +91,7 @@ collectionNames.forEach(name => {
       const data = { _key: req.pathParams.key };
       const ops = [{ collection: name, action: 'remove', data }];
       validator.validateSchema({}, ops);
-      const fkRules = relations[name] || [];
-      fkCheck.check(fkRules, [data]);
+      fkCheck.checkFromConfig(name, [data]);
       const result = executor.execute(ops);
       res.send(result[0]);
     } catch (err) {

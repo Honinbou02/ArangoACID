@@ -54,6 +54,12 @@ document uses the collection name as `_key` and lists its rules in the
   ]
 }
 ```
+Rules may optionally set `onDelete: "cascade"` to automatically remove
+child documents referencing the deleted record.
+If no configuration exists for a collection the checks are skipped. You can
+manage these documents manually or via the `/config/relations` API. See
+`docs/setup-relations.md` for details.
+
 If no configuration exists for a collection the checks are skipped. You can
 manage these documents manually or via the `/config/relations` API. See
 `docs/setup-relations.md` for details.

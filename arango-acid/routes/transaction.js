@@ -21,7 +21,7 @@ router.post('/transaction', function (req, res) {
     // Validação de schema
     validator.validateSchema(payload.schema, payload.operations);
 
-    // Validação de chaves estrangeiras (FK)
+    // Validação de FKs
     if (payload.foreignKeys) {
       fkCheck.check(payload.foreignKeys);
     } else {
@@ -32,7 +32,7 @@ router.post('/transaction', function (req, res) {
       });
     }
 
-    // Execução da transação
+    // Executa transação
     const result = executor.execute(payload.operations);
     res.send(result);
   } catch (err) {

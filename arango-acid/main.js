@@ -1,6 +1,9 @@
 'use strict';
 const createRouter = require('@arangodb/foxx/router');
 const db = require('@arangodb').db;
+const router = createRouter();
+
+const RELATIONS_COLLECTION = 'relations_config';
 
 const router = createRouter();
 
@@ -10,6 +13,7 @@ const RELATIONS_COLLECTION = 'relations_config';
 if (!db._collection(RELATIONS_COLLECTION)) {
   db._createDocumentCollection(RELATIONS_COLLECTION);
 }
+
 
 // Seed de exemplo se estiver vazia
 if (db._collection(RELATIONS_COLLECTION).count() === 0) {
