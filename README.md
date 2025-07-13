@@ -203,5 +203,3 @@ Apache 2.0 — free to use, contributions welcome.
 ---
 
 > Created with ❤️ by @Honinbou02
-
-> Criado com ❤️ por @Honinbou02
