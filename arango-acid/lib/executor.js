@@ -3,8 +3,27 @@ const db = require('@arangodb').db;
 const RELATIONS_COLLECTION = 'relations_config';
 
 function execute(operations) {
+  const writeCollections = new Set(operations.map(op => op.collection));
+
+  // Verifica se haverá efeitos em outras coleções por cascade
+  try {
+    const cfg = db._collection(RELATIONS_COLLECTION);
+    operations.forEach(op => {
+      if (op.action === 'remove') {
+        try {
+          const cfgDoc = cfg.firstExample({ _key: op.collection });
+          (cfgDoc.relations || []).forEach(rule => {
+            if (rule.onDelete === 'cascade') {
+              writeCollections.add(rule.refCollection);
+            }
+          });
+        } catch (_) {}
+      }
+    });
+  } catch (_) {}
+
   const collections = {
-    write: Array.from(new Set(operations.map(op => op.collection))),
+    write: Array.from(writeCollections),
     read: [RELATIONS_COLLECTION]
   };
 
@@ -15,21 +34,9 @@ function execute(operations) {
       const db = require('@arangodb').db;
       const cfg = db._collection(RELATIONS_COLLECTION);
       const results = [];
-      const toDelete = [];
 
-      const relationMap = {};
-      const relationDocs = cfg.all().toArray();
-      relationDocs.forEach(doc => {
-        (doc.relations || []).forEach(rel => {
-          if (!relationMap[rel.refCollection]) relationMap[rel.refCollection] = [];
-          relationMap[rel.refCollection].push({
-            source: doc._key, // collection filha
-            localField: rel.localField,
-            refField: rel.refField,
-            onDelete: rel.onDelete
-          });
-        });
-      });
+      // Executa operações primárias
+      const toDelete = [];
 
       params.operations.forEach(op => {
         const col = db._collection(op.collection);
@@ -40,30 +47,36 @@ function execute(operations) {
         } else if (op.action === 'update') {
           results.push(col.update(op.data._key, op.data));
         } else if (op.action === 'remove') {
-          // Verifica se outras collections dependem dessa
-          const dependents = relationMap[op.collection] || [];
-          dependents.forEach(rel => {
-            if (rel.onDelete === 'cascade') {
-              const refCol = db._collection(rel.source);
-              if (refCol) {
-                const matches = refCol.byExample({
-                  [rel.localField]: op.data[rel.refField]
-                }).toArray();
+          // Busca dependentes (cascade)
+          if (cfg) {
+            try {
+              const cfgDoc = cfg.firstExample({ _key: op.collection });
+              (cfgDoc.relations || []).forEach(rule => {
+                if (rule.onDelete === 'cascade') {
+                  const refCol = db._collection(rule.refCollection);
+                  if (refCol) {
+                    const dependents = refCol.byExample({
+                      [rule.localField]: op.data[rule.refField]
+                    }).toArray();
 
-                matches.forEach(doc => {
-                  toDelete.push({
-                    collection: rel.source,
-                    key: doc._key
-                  });
-                });
-              }
-            }
-          });
+                    dependents.forEach(doc => {
+                      toDelete.push({
+                        collection: rule.refCollection,
+                        key: doc._key
+                      });
+                    });
+                  }
+                }
+              });
+            } catch (_) {}
+          }
 
+          // Marca para remoção ao final
           results.push(col.remove(op.data._key));
         }
       });
 
+      // Agora remove os filhos (cascade)
       toDelete.forEach(rem => {
         const col = db._collection(rem.collection);
         if (col) {
