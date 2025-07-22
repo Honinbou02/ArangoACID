@@ -56,7 +56,7 @@ function execute(operations) {
                   const refCol = db._collection(rule.refCollection);
                   if (refCol) {
                     const dependents = refCol.byExample({
-                      [rule.refField]: op.data._key
+                      [rule.localField]: op.data[rule.refField]
                     }).toArray();
 
                     dependents.forEach(doc => {
